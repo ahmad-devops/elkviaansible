@@ -1,0 +1,11 @@
+---
+
+- hosts: localservers
+  become: true
+  tasks:
+    - name: Install pre-requisite packages
+      apt:
+        state: latest
+        name:
+          - openjdk-11-jdk
+          - nginx

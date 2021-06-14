@@ -1,0 +1,15 @@
+---
+
+- hosts: localservers
+  become: true
+  tasks:
+    - name : Check elasticsearch status
+      uri:
+        url: http://localhost:9200
+        method: GET
+      register: curl_output
+    - name: Debugging
+      debug:
+        var: "{{ curl_output.status }}"
+
+#https://stackoverflow.com/questions/24334115/ansible-lineinfile-for-several-lines

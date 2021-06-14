@@ -1,0 +1,64 @@
+---
+
+- hosts: localservers
+  become: true
+  handlers:
+  tasks:
+    - name: Adding elk apt-key
+      apt_key:
+        url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+        state: present
+    - name: Install apt-transport-https
+      apt:
+        name: apt-transport-https
+        state: present
+    - name: Adding ELK repo
+      shell: echo deb https://artifacts.elastic.co/packages/7.x/apt stable main > /etc/apt/sources.list.d/elastic-7.x.list
+    - name: Updating cache
+      apt:
+        update_cache: yes
+    - name: Install Elasticsearch
+      apt:
+        name: elasticsearch
+        state: present
+    - name: updating elasticsearch.yml network.host
+      lineinfile:
+        path: /etc/elasticsearch/elasticsearch.yml
+        insertafter: '#network.host: 192.168.0.1'
+        line: 'network.host: localhost'
+
+    - name: updating elasticsearch.yml http.port
+      lineinfile:
+        path: /etc/elasticsearch/elasticsearch.yml
+        regexp: '#http.port: 9200'
+        line: 'http.port: 9200'
+
+    - name: updating elasticsearch.yml discovery.type
+      lineinfile:
+        path: /etc/elasticsearch/elasticsearch.yml
+        insertafter: '#discovery.seed_hosts'
+        line: 'discovery.type: single-node'
+
+    - name: updating jvm.options
+      lineinfile:
+        path: /etc/elasticsearch/jvm.options
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '## -Xms4g', line: '-Xms512m' }
+        - { regexp: '## -Xmx4g', line: '-Xmx512m' }
+
+    - name: Start ElasticSearch
+      service:
+        name: elasticsearch
+        state: restarted
+        enabled: yes
+
+    - name : Check elasticsearch status
+      uri:
+        url: http://localhost:9200
+        method: GET
+      register: curl_output
+    - name: Debugging
+      debug:
+        var: "{{ curl_output.status }}"
