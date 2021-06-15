@@ -1,0 +1,19 @@
+---
+
+- hosts: localservers
+  become: true
+  tasks:
+    - name: Install Logstash
+      apt:
+        name: logstash
+        state: present
+    - name : Configure Logstash
+      copy: 
+        src: multibeats.conf
+        dest: /etc/logstash/conf.d/
+        force: yes
+    - name: Start Logstash Service
+      service:
+        name: logstash
+        state: restarted
+        enabled: yes

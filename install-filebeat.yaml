@@ -1,0 +1,27 @@
+---
+
+- hosts: localservers
+  become: yes
+  tasks:
+    - name: Install filebeat
+      apt:
+        name: filebeat
+        state: present
+    - name: Configure filebeat
+      file:
+        src: filebeat.yml
+        dest: /etc/filebeat/filebeat.yml
+        force: yes
+    - name: Enable system module
+      shell: filebeat modules enable system
+      args:
+        executable: /bin/bash
+    - name: Enable index managment
+      shell: filebeat setup --index-management -E output.logstash.enabled=false -E 'output.elasticsearch.hosts=["localhost:9200"]'
+      args:
+        executable: /bin/bash
+    - name: Restart the filebeat.service
+      service:
+        name: filebeat
+        state: restarted
+        enabled: yes

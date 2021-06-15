@@ -1,0 +1,34 @@
+---
+
+- hosts: localservers
+  become: true
+  tasks:
+    - name: Install Kibana
+      apt:
+        name: kibana
+        state: present
+
+    - name: updating kibana.yml
+      lineinfile:
+        path: /etc/kibana/kibana.yml
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '#server.port: 5601', line: 'server.port: 5601' }
+        - { regexp: '#server.host: "localhost"', line: 'server.host: "localhost"' }
+        - { regexp: '#elasticsearch.hosts: ["http://localhost:9200"]', line: 'elasticsearch.hosts: ["http://localhost:9200"]' }
+    
+    - name: Starting Kibana
+      service: 
+        name: kibana
+        state: restarted
+        enabled: yes
+
+    - name : Check Kibana status
+      uri:
+        url: http://localhost:5601/app/home#/
+        method: GET
+      register: curl_output
+    - name: Debugging
+      debug:
+        var: "{{ curl_output.invocation.module_args.status_code }}"
